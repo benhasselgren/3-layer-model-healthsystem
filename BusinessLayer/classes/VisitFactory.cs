@@ -12,71 +12,59 @@ namespace BusinessLayer.classes
         //**************create_visit method**************
         public Visit create_visit(int[] staff, int patient, int type, string dateTime, List<Client> client_list, List<Staff> staff_list, List<Visit> visit_list, List<VisitType> visit_types_list)
         {
-            //Will store staff available in this list
-            List<Staff> staff_found_list = new List<Staff>();
-
             //Find the visit type using input
             VisitType visitType_match = visit_types_list.FirstOrDefault(v => v.type_id == type);
             if (visitType_match == null)
             {
                 //If the visit type does not exist then throw an exception
-                throw new Exception();
+                throw new Exception("Visit type does not exist!");
             }
 
             //Find the client using input
             var client_match = client_list.FirstOrDefault(c => c.client_id == patient);
             if (client_match == null)
             {
-                //If the client type does not exist then throw an exception
-                throw new Exception();
+                //If the client does not exist then throw an exception
+                throw new Exception("Client  does not exist!");
             }
+            //Will store staff that meet requirements in this list
+            List<Staff> staff_found_list = new List<Staff>();
 
-            //Create temporary list to store staff
-            List<Staff> staff_list_copy = staff_list.ToList();
-
-            //Find all visits with same dateTime field
-            var visit_query = from v in visit_list where v.date == Convert.ToDateTime(dateTime) select v;
-
-            //Remove the staff that are not available on that time of day
-            //Loop through all the staff if visit_query has any visits in it
-            if (visit_query.Count() >= 1)
+            for (int x = 0; x < staff.Length; x++)
             {
-                foreach (Staff s in staff_list_copy)
+                var staff_found = staff_list.FirstOrDefault(s => s.staff_id == staff[x]);
+
+                if (staff_found != null)
                 {
+                    //Get the staff using the id provided
+                    var visit_found = from v in visit_list where v.date == Convert.ToDateTime(dateTime) select v;
+
+                    //Check to see staff have valid category type for visit
+                    if (!(visitType_match.staff_required.Contains(staff_found.category)))
+                    {
+                        //else If the staff type does not exist then throw an exception
+                        throw new Exception("Staff type does not match visit requirements!");
+                    }
                     //Loop through all the visits found
-                    foreach (Visit v in visit_query)
+                    foreach (Visit v in visit_found)
                     {
                         //If another visit contains a staff that that day then remove that staff from the staff_copy_list
-                        if (v.staff.Contains(s))
+                        if (v.staff.Contains(staff_found))
                         {
-                            staff_list_copy.Remove(s);
+                            throw new Exception("Staff not available that day, due to time clash!");
                         }
                     }
-                }
-            }
 
-
-            //Search for available staff and if the correct staff are'nt available then catch exception
-            for (int i = 1; i <= visitType_match.staff_required.Count; i++)
-            {
-                //Search for a staff with matches the requirements of the client
-                var staff_match = staff_list_copy.FirstOrDefault(s => visitType_match.staff_required.Contains(s.category));
-
-                if (staff_match == null)
-                {
-                    //If the staff type does not exist then throw an exception
-                    throw new Exception();
+                    //If passed all requirements then add staff to the list of found staff
+                    staff_found_list.Add(staff_found);
                 }
                 else
                 {
-                    //Add the staff to the found list
-                    staff_found_list.Add(staff_match);
-                    //Remove him from the copy list as he/she is now not available (Prevents staff from being used multiple times)
-                    staff_list_copy.Remove(staff_match);
+                    throw new Exception("Staff does not exist!");
                 }
             }
 
-            //Add the new visit to the visits list
+            //Add the new visit to the visits list if everything passes
             Visit visit = new Visit(client_match, staff_found_list, visitType_match, Convert.ToDateTime(dateTime));
 
             return visit;

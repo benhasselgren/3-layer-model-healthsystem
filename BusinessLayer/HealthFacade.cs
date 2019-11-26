@@ -16,7 +16,7 @@ namespace BusinessLayer
 
     public static class categories
     {
-        public const string gp = "General Practicioner";
+        public const string gp = "General Practitioner";
         public const string cn = "Community Nurse";
         public const string sw = "Social Worker";
         public const string cw = "Care Worker";
@@ -129,10 +129,10 @@ namespace BusinessLayer
                 //If no errors thrown, assum OK
                 return true;
             }
-            catch(Exception)
+            catch(Exception ex)
             {
                 //If an error is thrown from the visit factory, then assum WRONG
-                return false;
+                throw new Exception(ex.Message);
             }
         }
 
